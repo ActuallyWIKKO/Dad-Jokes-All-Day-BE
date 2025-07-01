@@ -20,6 +20,8 @@ type Joke = {
 const db = new Low<Joke>(new JSONFile("./src/db.json"), { items: [] });
 await db.read();
 
+
+
 app.get("/api/v1/jokes", (req: Request, res: Response) => {
   res.send({ status: "/api/v1/jokes route is reachable" });
 });
@@ -38,29 +40,26 @@ app.get("/jokes/random", async (req: Request, res: Response) => {
   }
 });
 
-// Show route
+
+// get jokes route
 app.get("/jokes", async (req: Request, res: Response) => {
   await db.read();
   // console.log(db.data);
   res.json(db.data?.items ?? []);
 });
-// add route
-app.get("/admin/jokes/add", (req: Request, res: Response) => {
-  res.send({ status: "/manage/jokes/add route is reachable" });
-});
-// edit route
-app.get("/joke/:id", async (req: Request, res: Response) => {
+// get joke id route
+app.get("/joke/:id", async (req, res) => {
   await db.read();
   const id = parseInt(req.params.id, 10);
+  const index = db.data?.items.findIndex((item) => item.id === id);
 
-  const joke = db.data?.items.find((item) => item.id === id);
-
-  if (joke) {
-    res.json(joke);
+  if (index !== undefined && index !== -1) {
+    res.json(db.data.items[index]);
   } else {
     res.status(404).json({ error: "Joke not found" });
   }
 });
+// Update joke id
 app.put("/joke/:id", async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { joke } = req.body;
@@ -76,6 +75,12 @@ app.put("/joke/:id", async (req: Request, res: Response) => {
     res.status(404).json({ error: "Joke not found" });
   }
 });
+// add route
+app.get("/admin/jokes/add", (req: Request, res: Response) => {
+  res.send({ status: "/manage/jokes/add route is reachable" });
+});
+
+
 // delete route
 app.delete("/joke/:id", async (req: Request, res: Response) => {
   await db.read();
