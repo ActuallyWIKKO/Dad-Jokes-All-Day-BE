@@ -29,12 +29,6 @@ app.get("/api/v1/health", (req: Request, res: Response) => {
   res.send({ status: "ok" });
 });
 
-app.get("/jokes", async (req: Request, res: Response) => {
-  await db.read();
-  // console.log(db.data);
-  res.json(db.data?.items ?? []);
-});
-
 app.get("/jokes/random", async (req: Request, res: Response) => {
   await db.read();
   const joke =
@@ -44,31 +38,57 @@ app.get("/jokes/random", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/joke/:id", async (req: Request, res: Response) => {
+// Show route
+app.get("/jokes", async (req: Request, res: Response) => {
   await db.read();
   // console.log(db.data);
-  const id = parseInt(req.params.id);
-  const joke = db.data?.items.find((item) => item.id === id);
-  if (joke) {
-    res.json(joke);
-  }
-});
-
-// Show route
-app.get("/manage/jokes", (req: Request, res: Response) => {
- res.send({ status: "/manage/jokes/manage route is reachable" });
+  res.json(db.data?.items ?? []);
 });
 // add route
-app.get("/manage/jokes/add", (req: Request, res: Response) => {
+app.get("/admin/jokes/add", (req: Request, res: Response) => {
   res.send({ status: "/manage/jokes/add route is reachable" });
 });
 // edit route
-app.get("/manage/jokes/edit", (req: Request, res: Response) => {
-  res.send({ status: "Route /manage/jokes/edit is reachable" });
+app.get("/joke/:id", async (req: Request, res: Response) => {
+  await db.read();
+  const id = parseInt(req.params.id, 10);
+
+  const joke = db.data?.items.find((item) => item.id === id);
+
+  if (joke) {
+    res.json(joke);
+  } else {
+    res.status(404).json({ error: "Joke not found" });
+  }
+});
+app.put("/joke/:id", async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const { joke } = req.body;
+
+  await db.read();
+  const itemIndex = db.data?.items.findIndex((item) => item.id === id);
+
+  if (itemIndex !== undefined && itemIndex !== -1 && db.data) {
+    db.data.items[itemIndex].joke = joke;
+    await db.write();
+    res.status(200).json(db.data.items[itemIndex]);
+  } else {
+    res.status(404).json({ error: "Joke not found" });
+  }
 });
 // delete route
-app.get("/manage/jokes/delete", (req: Request, res: Response) => {
-  res.send({ status: "/manage/jokes/delete route is reachable" });
+app.delete("/joke/:id", async (req: Request, res: Response) => {
+  await db.read();
+  const id = parseInt(req.params.id);
+  const index = db.data?.items.findIndex((item) => item.id === id);
+
+  if (index !== undefined && index !== -1) {
+    db.data?.items.splice(index, 1);
+    await db.write();
+    res.status(200).json({ message: "Joke deleted successfully." });
+  } else {
+    res.status(404).json({ error: "Joke not found. Nothing was deleted" });
+  }
 });
 
 
