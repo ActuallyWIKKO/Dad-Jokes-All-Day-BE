@@ -1,6 +1,5 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response  } from "express";
 import cors from "cors";
-import { Request, Response } from "express";
 import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
 
@@ -75,11 +74,33 @@ app.put("/joke/:id", async (req: Request, res: Response) => {
     res.status(404).json({ error: "Joke not found" });
   }
 });
-// add route
-app.get("/admin/jokes/add", (req: Request, res: Response) => {
-  res.send({ status: "/manage/jokes/add route is reachable" });
-});
 
+
+// post route
+app.post(
+  "/jokes", 
+  async (req: Request, res:Response): Promise<void> => {
+    const { joke } = req.body;
+
+    if (!joke || typeof joke !== "string") {
+      res.status(400).json({ error: "Invalid joke data" });
+      return;
+    }
+
+    await db.read();
+
+    const newId = db.data?.items.length
+      ? Math.max(...db.data.items.map((item) => item.id)) + 1
+      : 1;
+
+    const newJoke = { id: newId, joke };
+
+    db.data?.items.push(newJoke);
+    await db.write();
+
+    res.status(201).json(newJoke);
+    return;
+  });
 
 // delete route
 app.delete("/joke/:id", async (req: Request, res: Response) => {
